@@ -24,8 +24,7 @@ export const defaultParams: Params = {
     repayMonths: 67,
     totalRepayEqualsStandard: true,
     minCashReserve: 20000,
-    maxPerMonth: undefined, // ללא מגבלה
-    maxPercent: 100 // ברירת מחדל 100% (ללא מגבלה)
+    maxPercent: 30 // ברירת מחדל 30% מוקדמות
   },
   opex: {
     mode: 'MONTHLY',
@@ -95,9 +94,7 @@ export function validateParams(params: Params): string[] {
       errors.push('כרית מזומנים לא יכולה להיות שלילית');
     }
 
-    if (params.early.maxPerMonth !== undefined && params.early.maxPerMonth <= 0) {
-      errors.push('מגבלת הלוואות לחודש חייבת להיות חיובית');
-    }
+
   }
 
   if (params.opex.perUnitNis < 0) {
@@ -106,6 +103,10 @@ export function validateParams(params: Params): string[] {
 
   if (params.opex.percentOf4800 < 0 || params.opex.percentOf4800 > 1) {
     errors.push('אחוז מ-4800 חייב להיות בין 0 ל-1');
+  }
+
+  if (params.early.maxPercent !== undefined && (params.early.maxPercent < 0 || params.early.maxPercent > 100)) {
+    errors.push('תקרת אחוז מוקדמות חייבת להיות בין 0 ל-100');
   }
 
   if (params.yield.annualRate < 0 || params.yield.annualRate > 0.5) {

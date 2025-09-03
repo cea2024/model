@@ -124,8 +124,6 @@ export function simulate(params: Params): Results {
 
     // 7. אלגוריתם הלוואות מוקדמות (גרידי)
     if (params.early.enabled) {
-      let earlyLoansThisMonth = 0;
-      const maxEarlyThisMonth = params.early.maxPerMonth || Number.MAX_SAFE_INTEGER;
       
       // מיון קוהורטים לפי עדיפות (הוותקים ביותר קודם)
       const eligibleCohorts = cohorts
@@ -135,14 +133,12 @@ export function simulate(params: Params): Results {
       for (const cohort of eligibleCohorts) {
         while (
           cohort.remaining > 0 &&
-          earlyLoansThisMonth < maxEarlyThisMonth &&
           totalEarlyIssued < maxEarlyAllowed &&
           cash - params.early.minCashReserve >= params.std.amount
         ) {
           // הנפקת הלוואה מוקדמת אחת
           loansEarlyOut += params.std.amount;
           issuedEarly += 1;
-          earlyLoansThisMonth += 1;
           cohort.remaining -= 1;
           cohort.receivedEarly += 1;
           totalEarlyIssued += 1;
@@ -168,10 +164,6 @@ export function simulate(params: Params): Results {
             1
           );
         }
-      }
-      
-      if (earlyLoansThisMonth >= maxEarlyThisMonth) {
-        note += `הגיע למגבלת הלוואות מוקדמות לחודש; `;
       }
       
       if (totalEarlyIssued >= maxEarlyAllowed) {

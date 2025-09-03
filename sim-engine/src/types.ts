@@ -51,8 +51,6 @@ export interface EarlyLoan {
   totalRepayEqualsStandard: boolean;
   /** כרית מזומנים מינימלית */
   minCashReserve: number;
-  /** מגבלת הלוואות מוקדמות לחודש (אופציונלי) */
-  maxPerMonth?: number;
   /** תקרת אחוז מוקדמות מכלל היחידות */
   maxPercent?: number;
 }
