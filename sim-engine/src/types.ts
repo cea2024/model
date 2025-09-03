@@ -7,8 +7,8 @@ export type OpexMode = 'UPFRONT' | 'MONTHLY' | 'ON_LOAN';
  * פרמטרי מצטרפים חדשים
  */
 export interface Intake {
-  /** מספר מצטרפים חדשים בשנה */
-  newPerYear: number;
+  /** מספר מצטרפים חדשים בחודש */
+  newPerMonth: number;
   /** אופק הסימולציה בשנים */
   years: number;
 }
@@ -53,6 +53,8 @@ export interface EarlyLoan {
   minCashReserve: number;
   /** מגבלת הלוואות מוקדמות לחודש (אופציונלי) */
   maxPerMonth?: number;
+  /** תקרת אחוז מוקדמות מכלל היחידות */
+  maxPercent?: number;
 }
 
 /**
@@ -163,6 +165,8 @@ export interface Kpis {
   totalStd: number;
   /** אינדקס החודש הגרוע ביותר */
   worstMonthIndex: number;
+  /** החודש הגרוע ביותר בפורמט YYYY-MM */
+  worstMonthFormatted: string;
   /** יתרה מינימלית */
   minCash: number;
   /** יתרה סופית */

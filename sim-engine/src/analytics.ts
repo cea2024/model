@@ -1,5 +1,5 @@
 import { MonthlyRow, YearRow, Kpis } from './types';
-import { findWorstMonthIndex, countNegativeCashMonths, min, sum } from './utils';
+import { findWorstMonthIndex, countNegativeCashMonths, min, sum, formatMonthIndex } from './utils';
 
 /**
  * בונה נתונים שנתיים מתוך נתונים חודשיים
@@ -94,6 +94,7 @@ export function calculateKpis(monthlyData: MonthlyRow[]): Kpis {
       totalEarly: 0,
       totalStd: 0,
       worstMonthIndex: 0,
+      worstMonthFormatted: '0001-01',
       minCash: 0,
       endCash: 0,
       negativeCashMonths: 0
@@ -124,6 +125,7 @@ export function calculateKpis(monthlyData: MonthlyRow[]): Kpis {
     totalEarly,
     totalStd,
     worstMonthIndex,
+    worstMonthFormatted: formatMonthIndex(worstMonthIndex),
     minCash,
     endCash,
     negativeCashMonths

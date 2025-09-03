@@ -23,12 +23,12 @@ export function scheduleRepay(
 }
 
 /**
- * מחשב את חודש ההצטרפות של קוהורט
- * @param yearIndex אינדקס השנה (0-based)
+ * מחשב את חודש ההצטרפות של קוהורט חודשי
+ * @param monthIndex אינדקס החודש (0-based)
  * @returns חודש ההצטרפות
  */
-export function joinMonth(yearIndex: number): number {
-  return yearIndex * 12; // כל קוהורט מצטרף בינואר
+export function joinMonth(monthIndex: number): number {
+  return monthIndex; // כל קוהורט מצטרף בחודש שלו
 }
 
 /**

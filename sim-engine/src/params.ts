@@ -5,8 +5,8 @@ import { Params } from './types';
  */
 export const defaultParams: Params = {
   intake: {
-    newPerYear: 1000,
-    years: 30
+    newPerMonth: 100,
+    years: 70
   },
   savings: {
     monthly: 40,
@@ -24,7 +24,8 @@ export const defaultParams: Params = {
     repayMonths: 67,
     totalRepayEqualsStandard: true,
     minCashReserve: 20000,
-    maxPerMonth: undefined // ללא מגבלה
+    maxPerMonth: undefined, // ללא מגבלה
+    maxPercent: 100 // ברירת מחדל 100% (ללא מגבלה)
   },
   opex: {
     mode: 'MONTHLY',
@@ -45,8 +46,8 @@ export function validateParams(params: Params): string[] {
   const errors: string[] = [];
 
   // בדיקות בסיסיות
-  if (params.intake.newPerYear <= 0) {
-    errors.push('מספר מצטרפים חדשים חייב להיות חיובי');
+  if (params.intake.newPerMonth <= 0) {
+    errors.push('מספר מצטרפים חדשים לחודש חייב להיות חיובי');
   }
   
   if (params.intake.years <= 0) {

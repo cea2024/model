@@ -12,13 +12,13 @@ describe('מנוע הסימולציה', () => {
     it('צריך לזהות פרמטרים לא תקינים', () => {
       const invalidParams: Params = {
         ...defaultParams,
-        intake: { newPerYear: -100, years: 0 },
+        intake: { newPerMonth: -100, years: 0 },
         savings: { monthly: -40, months: 0 }
       };
       
       const errors = validateParams(invalidParams);
       expect(errors.length).toBeGreaterThan(0);
-      expect(errors.some(e => e.includes('מצטרפים'))).toBe(true);
+      expect(errors.some(e => e.includes('לחודש'))).toBe(true);
       expect(errors.some(e => e.includes('שנים'))).toBe(true);
       expect(errors.some(e => e.includes('תרומה'))).toBe(true);
     });
@@ -38,22 +38,22 @@ describe('מנוע הסימולציה', () => {
       expect(results.kpis).toBeDefined();
     });
 
-    it('צריך לחשב תרומות נכון', () => {
+    it('צריך לחשב תרומות נכון עם מצטרפים חודשיים', () => {
       const params: Params = {
         ...defaultParams,
-        intake: { newPerYear: 120, years: 2 }, // 120 מצטרפים בינואר כל שנה
+        intake: { newPerMonth: 10, years: 2 }, // 10 מצטרפים חדשים כל חודש
         savings: { monthly: 100, months: 12 }
       };
       
       const results = simulate(params);
       
-      // בחודש 0: 120 משתתפים × 100 = 12000
-      expect(results.monthly[0].contribIn).toBe(12000);
+      // בחודש 0: 10 משתתפים × 100 = 1000
+      expect(results.monthly[0].contribIn).toBe(1000);
       
-      // בחודש 11: רק 120 ישנים (עדיין פעילים) × 100 = 12000  
-      expect(results.monthly[11].contribIn).toBe(12000);
+      // בחודש 1: 10 חדשים + 10 ישנים × 100 = 2000
+      expect(results.monthly[1].contribIn).toBe(2000);
       
-      // בחודש 12: 120 חדשים (הישנים סיימו) × 100 = 12000
+      // בחודש 12: 10 חדשים + 10×11 ישנים (הראשונים סיימו) × 100 = 12000
       expect(results.monthly[12].contribIn).toBe(12000);
     });
   });
@@ -62,7 +62,7 @@ describe('מנוע הסימולציה', () => {
     it('צריך להנפיק הלוואות רגילות בחודש הנכון', () => {
       const params: Params = {
         ...defaultParams,
-        intake: { newPerYear: 12, years: 5 }, // 1 לחודש
+        intake: { newPerMonth: 1, years: 5 }, // 1 מצטרף לחודש
         savings: { monthly: 100, months: 12 },
         std: { ...defaultParams.std, waitMonths: 24 }, // המתנה של שנתיים
         early: { ...defaultParams.early, enabled: false }
@@ -70,9 +70,9 @@ describe('מנוע הסימולציה', () => {
       
       const results = simulate(params);
       
-      // הקוהורט הראשון צריך לקבל הלוואה בחודש 24
-      expect(results.monthly[24].issuedStd).toBe(12);
-      expect(results.monthly[24].loansStdOut).toBe(12 * 40000);
+      // הקוהורט הראשון (חודש 0) צריך לקבל הלוואה בחודש 24
+      expect(results.monthly[24].issuedStd).toBe(1);
+      expect(results.monthly[24].loansStdOut).toBe(1 * 40000);
       
       // חודשים אחרים לא צריכים הלוואות רגילות (עדיין)
       expect(results.monthly[23].issuedStd).toBe(0);
@@ -83,8 +83,8 @@ describe('מנוע הסימולציה', () => {
     it('צריך להנפיק הלוואות מוקדמות כשיש מזומן', () => {
       const params: Params = {
         ...defaultParams,
-        intake: { newPerYear: 12, years: 3 },
-        savings: { monthly: 5000, months: 24 }, // תרומה גבוהה
+        intake: { newPerMonth: 5, years: 3 },
+        savings: { monthly: 2000, months: 24 }, // תרומה גבוהה
         std: { ...defaultParams.std, waitMonths: 36 },
         early: { 
           ...defaultParams.early, 
@@ -106,7 +106,7 @@ describe('מנוע הסימולציה', () => {
     it('לא צריך להנפיק מוקדמות כשאין מספיק מזומן', () => {
       const params: Params = {
         ...defaultParams,
-        intake: { newPerYear: 12, years: 2 },
+        intake: { newPerMonth: 1, years: 2 },
         savings: { monthly: 10, months: 12 }, // תרומה נמוכה
         early: { 
           ...defaultParams.early, 
@@ -125,24 +125,23 @@ describe('מנוע הסימולציה', () => {
     it('צריך לחשב OPEX במצב UPFRONT', () => {
       const params: Params = {
         ...defaultParams,
-        intake: { newPerYear: 120, years: 2 },
+        intake: { newPerMonth: 10, years: 2 },
         opex: { mode: 'UPFRONT', perUnitNis: 100, percentOf4800: 0 },
         early: { ...defaultParams.early, enabled: false }
       };
       
       const results = simulate(params);
       
-      // בחודש 0: 120 מצטרפים × 100 = 12000
-      expect(results.monthly[0].opexOut).toBe(12000);
-      
-      // בחודש 12: 120 מצטרפים חדשים × 100 = 12000
-      expect(results.monthly[12].opexOut).toBe(12000);
+      // בכל חודש: 10 מצטרפים × 100 = 1000
+      expect(results.monthly[0].opexOut).toBe(1000);
+      expect(results.monthly[5].opexOut).toBe(1000);
+      expect(results.monthly[12].opexOut).toBe(1000);
     });
 
     it('צריך לחשב OPEX במצב MONTHLY', () => {
       const params: Params = {
         ...defaultParams,
-        intake: { newPerYear: 120, years: 2 },
+        intake: { newPerMonth: 10, years: 2 },
         savings: { monthly: 40, months: 12 },
         opex: { mode: 'MONTHLY', perUnitNis: 120, percentOf4800: 0 },
         early: { ...defaultParams.early, enabled: false }
@@ -150,8 +149,8 @@ describe('מנוע הסימולציה', () => {
       
       const results = simulate(params);
       
-      // בחודש 1: 120 פעילים × (120/12) = 120 × 10 = 1200
-      expect(results.monthly[0].opexOut).toBe(1200);
+      // בחודש 0: 10 פעילים × (120/12) = 10 × 10 = 100
+      expect(results.monthly[0].opexOut).toBe(100);
     });
   });
 
@@ -159,8 +158,9 @@ describe('מנוע הסימולציה', () => {
     it('צריך לחשב תשואה על יתרה חיובית', () => {
       const params: Params = {
         ...defaultParams,
-        intake: { newPerYear: 12, years: 2 },
+        intake: { newPerMonth: 5, years: 3 },
         savings: { monthly: 1000, months: 12 },
+        std: { ...defaultParams.std, waitMonths: 24 }, // המתנה קצרה יותר
         yield: { annualRate: 0.05, applyOnMinCash: false }, // 5% שנתי
         early: { ...defaultParams.early, enabled: false }
       };
@@ -177,7 +177,8 @@ describe('מנוע הסימולציה', () => {
     it('צריך לחשב KPIs נכון', () => {
       const params: Params = {
         ...defaultParams,
-        intake: { newPerYear: 100, years: 3 },
+        intake: { newPerMonth: 10, years: 3 },
+        std: { ...defaultParams.std, waitMonths: 24 }, // המתנה קצרה יותר
         early: { ...defaultParams.early, enabled: true }
       };
       
@@ -188,6 +189,7 @@ describe('מנוע הסימולציה', () => {
       expect(results.kpis.percentEarly).toBeLessThanOrEqual(100);
       expect(results.kpis.worstMonthIndex).toBeGreaterThanOrEqual(0);
       expect(results.kpis.worstMonthIndex).toBeLessThan(results.monthly.length);
+      expect(results.kpis.worstMonthFormatted).toBeDefined();
     });
   });
 

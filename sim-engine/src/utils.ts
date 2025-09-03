@@ -150,3 +150,14 @@ export function isInRange(value: number, min: number, max: number): boolean {
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
+
+/**
+ * ממיר אינדקס חודש לפורמט YYYY-MM
+ * @param monthIndex אינדקס החודש (0-based)
+ * @returns מחרוזת בפורמט YYYY-MM
+ */
+export function formatMonthIndex(monthIndex: number): string {
+  const year = Math.floor(monthIndex / 12) + 1;
+  const month = (monthIndex % 12) + 1;
+  return `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}`;
+}

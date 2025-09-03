@@ -25,25 +25,17 @@ export function simulate(params: Params): Results {
   const repayStdSchedule = new Float64Array(totalMonths);
   const repayEarlySchedule = new Float64Array(totalMonths);
   
-  // מעקב אחר קוהורטים
+  // מעקב אחר קוהורטים - יווצרו דינמית במהלך הסימולציה
   const cohorts: Cohort[] = [];
-  
-  // יצירת קוהורטים
-  for (let year = 0; year < params.intake.years; year++) {
-    const joinMth = joinMonth(year);
-    if (joinMth < totalMonths) {
-      cohorts.push({
-        joinMonth: joinMth,
-        dueMonth: dueMonth(joinMth, params.std.waitMonths),
-        size: params.intake.newPerYear,
-        remaining: params.intake.newPerYear,
-        receivedEarly: 0,
-        isActive: true
-      });
-    }
-  }
 
   let cash = 0;
+  let totalEarlyIssued = 0; // מעקב אחר סך הלוואות מוקדמות
+
+  // חישוב מגבלת מוקדמות
+  const totalUnits = params.intake.newPerMonth * totalMonths;
+  const maxEarlyAllowed = params.early.maxPercent ? 
+    Math.floor((params.early.maxPercent / 100) * totalUnits) : 
+    Number.MAX_SAFE_INTEGER;
 
   // לולאה ראשית - חודש אחר חודש
   for (let t = 0; t < totalMonths; t++) {
@@ -55,6 +47,16 @@ export function simulate(params: Params): Results {
     let issuedStd = 0;
     let issuedEarly = 0;
     let note = '';
+
+    // 0. יצירת קוהורט חדש בחודש זה
+    cohorts.push({
+      joinMonth: t,
+      dueMonth: dueMonth(t, params.std.waitMonths),
+      size: params.intake.newPerMonth,
+      remaining: params.intake.newPerMonth,
+      receivedEarly: 0,
+      isActive: true
+    });
 
     // 1. חישוב תרומות מקוהורטים פעילים
     for (const cohort of cohorts) {
@@ -73,10 +75,9 @@ export function simulate(params: Params): Results {
     // עדכון יתרה עם כניסות
     cash += contribIn + repayStdIn + repayEarlyIn + yieldIn;
 
-    // 4. OPEX - הצטרפות חדשה (UPFRONT)
-    const newCohort = cohorts.find(c => c.joinMonth === t);
-    if (newCohort) {
-      opexOut += calculateTotalOpex(params.opex, 'upfront', newCohort.size);
+    // 4. OPEX - הצטרפות חדשה (UPFRONT) - כל חודש יש קוהורט חדש
+    if (t < totalMonths) { // יש קוהורט חדש בחודש זה
+      opexOut += calculateTotalOpex(params.opex, 'upfront', params.intake.newPerMonth);
     }
 
     // 5. OPEX - חודשי (MONTHLY)
@@ -135,6 +136,7 @@ export function simulate(params: Params): Results {
         while (
           cohort.remaining > 0 &&
           earlyLoansThisMonth < maxEarlyThisMonth &&
+          totalEarlyIssued < maxEarlyAllowed &&
           cash - params.early.minCashReserve >= params.std.amount
         ) {
           // הנפקת הלוואה מוקדמת אחת
@@ -143,6 +145,7 @@ export function simulate(params: Params): Results {
           earlyLoansThisMonth += 1;
           cohort.remaining -= 1;
           cohort.receivedEarly += 1;
+          totalEarlyIssued += 1;
           cash -= params.std.amount;
           
           // OPEX על הלוואה מוקדמת
@@ -169,6 +172,10 @@ export function simulate(params: Params): Results {
       
       if (earlyLoansThisMonth >= maxEarlyThisMonth) {
         note += `הגיע למגבלת הלוואות מוקדמות לחודש; `;
+      }
+      
+      if (totalEarlyIssued >= maxEarlyAllowed) {
+        note += `הגיע לתקרת אחוז מוקדמות (${params.early.maxPercent}%); `;
       }
     }
 
